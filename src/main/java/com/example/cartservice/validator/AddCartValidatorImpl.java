@@ -19,6 +19,7 @@ public class AddCartValidatorImpl implements CartValidatorIF {
     @Autowired
     private InventoryServiceInvoker inventoryServiceInvoker;
 
+
     /**
      * get productName by calling product service
      * check inventory to see if required quantity is available
@@ -37,6 +38,8 @@ public class AddCartValidatorImpl implements CartValidatorIF {
     }
 
     private void validateQuantityInInventory(CartRequest cartRequest) throws CartServiceException, InvalidCartRequestException {
+
+
         InventoryDetailsResponse inventoryDetails = inventoryServiceInvoker.
                 getInventoryDetails(cartRequest.getProductName());
 
@@ -46,6 +49,8 @@ public class AddCartValidatorImpl implements CartValidatorIF {
         if (OrderedQuantity > inventoryQuantity) {
             String msg = "Ordered Quantity is more than available quantity";
             throw new InvalidCartRequestException(msg);
+        }else{
+            cartRequest.setInventoryQuantity(inventoryQuantity);
         }
     }
 
@@ -53,6 +58,7 @@ public class AddCartValidatorImpl implements CartValidatorIF {
         ProductResponse response = productServiceInvoker.getProductDetails(cartRequest.getProductId());
         cartRequest.setProductName(response.getProductName());
         cartRequest.setCategoryName(response.getCategoryName());
+        cartRequest.setPrice(response.getPrice());
     }
 
     private void validatePriceAndQuantity(CartRequest cartRequest) throws InvalidCartRequestException {

@@ -2,6 +2,7 @@ package com.example.cartservice.service;
 
 import com.example.cartservice.common.CartConstants;
 import com.example.cartservice.common.CartServiceException;
+import com.example.cartservice.common.InvalidCartRequestException;
 import com.example.cartservice.entity.CartDTO;
 import com.example.cartservice.factory.ValidatorFactory;
 import com.example.cartservice.model.CartRequest;
@@ -49,7 +50,7 @@ public class CartService {
         return response;
     }
 
-    private CartDTO processAddItemInCart(CartRequest cartRequest) {
+    private CartDTO processAddItemInCart(CartRequest cartRequest) throws InvalidCartRequestException {
         CartDTO cartDTO = null;
         Optional<CartDTO> optionalCartDTO = Optional.empty();
         try {
@@ -62,7 +63,12 @@ public class CartService {
             //if present then just increase the cart quantity
             cartDTO = optionalCartDTO.get();
             int newQuantity = cartDTO.getQuantity() + cartRequest.getQuantity();
-            cartDTO.setQuantity(newQuantity);
+            if (newQuantity > cartRequest.getInventoryQuantity()) {
+                String msg = "Ordered Quantity is more than available quantity";
+                throw new InvalidCartRequestException(msg);
+            } else {
+                cartDTO.setQuantity(newQuantity);
+            }
         } else {
             //if not present, then add in cart
             ObjectMapper mapper = new ObjectMapper();
