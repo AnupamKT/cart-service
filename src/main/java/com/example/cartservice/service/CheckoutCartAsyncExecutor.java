@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,9 +35,10 @@ public class CheckoutCartAsyncExecutor {
     private ExecutorService executorService;
 
     public void handleCheckoutCartAsyncOperation(List<CartDTO> cartDTOList) {
-        executorService.submit(() -> invokeOrderService(cartDTOList));
-        executorService.submit(() -> updateInventory(cartDTOList));
-        executorService.submit(() -> deleteCartItems(cartDTOList));
+        CompletableFuture
+                .runAsync(()->invokeOrderService(cartDTOList))
+                .thenRunAsync(()->updateInventory(cartDTOList))
+                .thenRunAsync(()->deleteCartItems(cartDTOList));
     }
 
     private void deleteCartItems(List<CartDTO> cartDTOList) {
@@ -67,6 +69,4 @@ public class CheckoutCartAsyncExecutor {
             }
         }
     }
-
-
 }
