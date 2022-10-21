@@ -21,9 +21,4 @@ public class CartServiceConfiguration {
                 .setConnectTimeout(Duration.ofMillis(3000)).build();
       return restTemplate;
     }
-
-    @Bean
-    public ExecutorService getExecutorService(){
-        return Executors.newFixedThreadPool(5);
-    }
 }

@@ -16,8 +16,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Component
 @Slf4j
@@ -31,8 +29,6 @@ public class CheckoutCartAsyncExecutor {
     @Autowired
     private OrderConverter orderConverter;
 
-    @Autowired
-    private ExecutorService executorService;
 
     public void handleCheckoutCartAsyncOperation(List<CartDTO> cartDTOList) {
         CompletableFuture
