@@ -6,12 +6,16 @@ import com.example.cartservice.converter.OrderConverter;
 import com.example.cartservice.entity.CartDTO;
 import com.example.cartservice.invoker.InventoryServiceInvoker;
 import com.example.cartservice.invoker.OrderServiceInvoker;
+import com.example.cartservice.kafka.KafkaMessageSender;
 import com.example.cartservice.model.Inventory;
 import com.example.cartservice.model.Order;
 import com.example.cartservice.repository.CartRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -23,18 +27,15 @@ public class CheckoutCartAsyncExecutor {
     @Autowired
     private CartRepository cartRepository;
     @Autowired
-    private InventoryServiceInvoker inventoryServiceInvoker;
-    @Autowired
-    private OrderServiceInvoker orderServiceInvoker;
-    @Autowired
     private OrderConverter orderConverter;
-
+    @Autowired
+    private KafkaMessageSender kafkaSender;
 
     public void handleCheckoutCartAsyncOperation(List<CartDTO> cartDTOList) {
         CompletableFuture
-                .runAsync(()->invokeOrderService(cartDTOList))
-                .thenRunAsync(()->updateInventory(cartDTOList))
-                .thenRunAsync(()->deleteCartItems(cartDTOList));
+                .runAsync(() -> invokeOrderService(cartDTOList))
+                .thenRunAsync(() -> updateInventory(cartDTOList))
+                .thenRunAsync(() -> deleteCartItems(cartDTOList));
     }
 
     private void deleteCartItems(List<CartDTO> cartDTOList) {
@@ -46,23 +47,14 @@ public class CheckoutCartAsyncExecutor {
         for (CartDTO cartDTO : cartDTOList) {
             Inventory inventory = mapper.convertValue(cartDTO, Inventory.class);
             inventory.setAction(CartConstants.cartAction.DELETE.toString());
-            try {
-                inventoryServiceInvoker.updateInventory(inventory);
-            } catch (CartServiceException e) {
-                log.error("error occurred while updating inventory", e);
-            }
+            kafkaSender.sendInventoryUpdateMessage(inventory);
         }
     }
 
     private void invokeOrderService(List<CartDTO> cartDTOList) {
         for (CartDTO cartDTO : cartDTOList) {
             Order order = orderConverter.prepareOrderServiceRequest(cartDTO);
-            try {
-                orderServiceInvoker.createOrder(order);
-            } catch (CartServiceException e) {
-                String msg = "server error occurred while calling order service " + e.getMessage();
-                log.error(msg);
-            }
+            kafkaSender.sendOrderCreatedMessage(order);
         }
     }
 }
