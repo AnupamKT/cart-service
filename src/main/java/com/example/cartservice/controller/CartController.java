@@ -17,14 +17,15 @@ public class CartController {
     private CartService cartService;
 
     @PostMapping("/add")
-    public ResponseEntity<Response> addItemInCart(@RequestBody CartRequest cartRequest) throws Exception {
-        Response response = cartService.addItemInCart(cartRequest);
+    public ResponseEntity<Response> addItemInCart(@RequestHeader String userName,
+                                                  @RequestBody CartRequest cartRequest) throws Exception {
+        Response response = cartService.addItemInCart(cartRequest,userName);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @PostMapping("/checkout/{userId}")
-    public ResponseEntity checkoutCart(@PathVariable String userId) throws Exception {
-        Response response = cartService.checkoutCart(userId);
+    @PostMapping("/checkout/{userName}")
+    public ResponseEntity checkoutCart(@PathVariable String userName) throws Exception {
+        Response response = cartService.checkoutCart(userName);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

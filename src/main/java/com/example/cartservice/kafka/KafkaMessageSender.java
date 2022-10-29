@@ -1,6 +1,7 @@
 package com.example.cartservice.kafka;
 
 import com.example.cartservice.model.Inventory;
+import com.example.cartservice.model.NotificationRequest;
 import com.example.cartservice.model.Order;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -20,11 +21,18 @@ public class KafkaMessageSender {
     @Qualifier("inventoryKafkaTemplate")
     private KafkaTemplate inventoryKafkaTemplate;
     @Autowired
+    @Qualifier("notificationKafkaTemplate")
+    private KafkaTemplate notificationKafkaTemplate;
+    @Autowired
     @Qualifier("orderTopic")
     private NewTopic orderTopic;
     @Autowired
     @Qualifier("inventoryTopic")
     private NewTopic inventoryTopic;
+    @Autowired
+    @Qualifier("notificationTopic")
+    private NewTopic notificationTopic;
+
 
 
     public void sendInventoryUpdateMessage(Inventory inventory) {
@@ -40,6 +48,14 @@ public class KafkaMessageSender {
             orderKafkaTemplate.send(orderTopic.name(), order);
         } catch (Exception ex) {
             log.error("error occurred while sending kafka message for creating order");
+        }
+    }
+
+    public void sendNotification(NotificationRequest notificationRequest) {
+        try {
+            notificationKafkaTemplate.send(notificationTopic.name(), notificationRequest);
+        } catch (Exception ex) {
+            log.error("error occurred while sending kafka notification");
         }
     }
 }

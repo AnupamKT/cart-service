@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Order {
-    private String itemName;
-    private int itemPrice;
-    private int itemQuantity;
-    private String userName;
+public class AuthenticationResponse {
+    private String jwtToken;
 }

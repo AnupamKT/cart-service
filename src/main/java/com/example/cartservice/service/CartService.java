@@ -3,6 +3,7 @@ package com.example.cartservice.service;
 import com.example.cartservice.common.CartConstants;
 import com.example.cartservice.common.CartServiceException;
 import com.example.cartservice.common.InvalidCartRequestException;
+import com.example.cartservice.converter.CartRequestConverter;
 import com.example.cartservice.entity.CartDTO;
 import com.example.cartservice.factory.ValidatorFactory;
 import com.example.cartservice.model.CartRequest;
@@ -15,7 +16,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 public class CartService {
@@ -24,9 +24,11 @@ public class CartService {
     private ValidatorFactory validatorFactory;
     @Autowired
     private CartRepository cartRepository;
-
     @Autowired
     private CheckoutCartAsyncExecutor executor;
+    @Autowired
+    private CartRequestConverter converter;
+
 
     /**
      * Validate the request
@@ -36,13 +38,13 @@ public class CartService {
      * @return Response-- response
      */
 
-    
-    public Response addItemInCart(CartRequest cartRequest) throws Exception {
+
+    public Response addItemInCart(CartRequest cartRequest, String userName) throws Exception {
         Response response = null;
         validatorFactory
                 .getCartValidator(CartConstants.cartAction.ADD.toString())
                 .validate(cartRequest);
-        CartDTO cartDTO = processAddItemInCart(cartRequest);
+        CartDTO cartDTO = processAddItemInCart(cartRequest,userName);
         if (cartDTO != null) {
             response = new Response(200, cartDTO);
         } else {
@@ -52,15 +54,12 @@ public class CartService {
         return response;
     }
 
-    private CartDTO processAddItemInCart(CartRequest cartRequest) throws InvalidCartRequestException {
+    private CartDTO processAddItemInCart(CartRequest cartRequest,String userName) throws InvalidCartRequestException {
         CartDTO cartDTO = null;
         Optional<CartDTO> optionalCartDTO = Optional.empty();
-        try {
-            optionalCartDTO = cartRepository
-                    .findByUserIdAndProductName(cartRequest.getUserId(), cartRequest.getProductName());
-        } catch (Exception e) {
+        optionalCartDTO = cartRepository
+                    .findByUserNameAndProductName(userName, cartRequest.getProductName());
 
-        }
         if (optionalCartDTO.isPresent()) {
             //if present then just increase the cart quantity
             cartDTO = optionalCartDTO.get();
@@ -72,9 +71,8 @@ public class CartService {
                 cartDTO.setQuantity(newQuantity);
             }
         } else {
-            //if not present, then add in cart
-            ObjectMapper mapper = new ObjectMapper();
-            cartDTO = mapper.convertValue(cartRequest, CartDTO.class);
+
+            cartDTO = converter.convertCartRequest(cartRequest,userName);
         }
         return cartRepository.save(cartDTO);
     }
@@ -86,8 +84,8 @@ public class CartService {
      * call order service async to create order request
      * delete cart entries
      */
-    public Response checkoutCart(String userId) throws Exception {
-        List<CartDTO> cartDTOList = cartRepository.findByUserId(userId);
+    public Response checkoutCart(String userName) throws Exception {
+        List<CartDTO> cartDTOList = cartRepository.findByUserName(userName);
 
         if (!CollectionUtils.isEmpty(cartDTOList)) {
             validatorFactory

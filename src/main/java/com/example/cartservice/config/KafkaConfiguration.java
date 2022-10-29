@@ -1,6 +1,7 @@
 package com.example.cartservice.config;
 
 import com.example.cartservice.model.Inventory;
+import com.example.cartservice.model.NotificationRequest;
 import com.example.cartservice.model.Order;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -25,13 +26,15 @@ public class KafkaConfiguration {
     private String KAFKA_ORDER_TOPIC_NAME;
     @Value("${kafka.inventory.update.topic}")
     private String KAFKA_INVENTORY_TOPIC_NAME;
+    @Value("${kafka.notification.sender.topic}")
+    private String KAFKA_NOTIFICATION_SENDER_TOPIC;
     @Value("${kafka.replication.factor}")
     private int KAFKA_REPLICATION_FACTOR;
     @Value("${kafka.partition.factor}")
     private int KAFKA_PARTITION_FACTOR;
 
     @Bean
-    public Map<String,Object> getConfigProps(){
+    public Map<String, Object> getConfigProps() {
         Map<String, Object> configMap = new HashMap<>();
         configMap.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP_SERVER);
         configMap.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -43,31 +46,49 @@ public class KafkaConfiguration {
     public ProducerFactory<String, Order> getOrderProducerFactory() {
         return new DefaultKafkaProducerFactory<>(getConfigProps());
     }
+
     @Bean
     public ProducerFactory<String, Inventory> getInventoryProducerFactory() {
         return new DefaultKafkaProducerFactory<>(getConfigProps());
     }
 
-    @Bean(name="orderKafkaTemplate")
+    @Bean
+    public ProducerFactory<String, NotificationRequest> getNotificationProducerFactory() {
+        return new DefaultKafkaProducerFactory<>(getConfigProps());
+    }
+
+    @Bean(name = "orderKafkaTemplate")
     public KafkaTemplate getOrderKafkaTemplate() {
         return new KafkaTemplate(getOrderProducerFactory());
     }
 
-    @Bean(name="inventoryKafkaTemplate")
+    @Bean(name = "inventoryKafkaTemplate")
     public KafkaTemplate getInventoryKafkaTemplate() {
         return new KafkaTemplate(getInventoryProducerFactory());
     }
 
-    @Bean(name="orderTopic")
-    public NewTopic orderTopic(){
+    @Bean(name = "notificationKafkaTemplate")
+    public KafkaTemplate getNotificationKafkaTemplate() {
+        return new KafkaTemplate(getNotificationProducerFactory());
+    }
+
+    @Bean(name = "orderTopic")
+    public NewTopic orderTopic() {
         return new NewTopic(KAFKA_ORDER_TOPIC_NAME,
                 KAFKA_PARTITION_FACTOR,
                 (short) KAFKA_REPLICATION_FACTOR);
     }
 
-    @Bean(name="inventoryTopic")
-    public NewTopic inventoryTopic(){
+    @Bean(name = "inventoryTopic")
+    public NewTopic inventoryTopic() {
         return new NewTopic(KAFKA_INVENTORY_TOPIC_NAME,
+                KAFKA_PARTITION_FACTOR,
+                (short) KAFKA_REPLICATION_FACTOR);
+    }
+
+    @Bean(name = "notificationTopic")
+    public NewTopic notificationTopic() {
+        return new NewTopic(KAFKA_NOTIFICATION_SENDER_TOPIC,
                 KAFKA_PARTITION_FACTOR,
                 (short) KAFKA_REPLICATION_FACTOR);
     }

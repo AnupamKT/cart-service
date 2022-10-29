@@ -13,7 +13,7 @@ public class OrderConverter {
         order.setItemName(cartDTO.getProductName());
         order.setItemPrice((int)cartDTO.getPrice());
         order.setItemQuantity(cartDTO.getQuantity());
-        order.setUserId(Long.valueOf(cartDTO.getUserId()));
+        order.setUserName(cartDTO.getUserName());
         return order;
     }
 }

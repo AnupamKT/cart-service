@@ -1,9 +1,13 @@
 package com.example.cartservice.service;
 
 import com.example.cartservice.entity.CartDTO;
+import com.example.cartservice.invoker.CustomerServiceInvoker;
 import com.example.cartservice.invoker.InventoryServiceInvoker;
+import com.example.cartservice.kafka.KafkaMessageSender;
+import com.example.cartservice.model.CustomerDetails;
 import com.example.cartservice.model.InventoryDetailsResponse;
 import com.example.cartservice.repository.CartRepository;
+import com.example.cartservice.util.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,30 +24,39 @@ public class CartSchedulerService {
     private CartRepository cartRepository;
     @Autowired
     private InventoryServiceInvoker invoker;
+    @Autowired
+    private CustomerServiceInvoker customerServiceInvoker;
+    @Autowired
+    private KafkaMessageSender kafkaSender;
 
     public void checkCartEntriesWithInventory() {
         List<CartDTO> cartDTOList = cartRepository.findAll();
         //cart entries grouped by userId
-        Map<String, List<CartDTO>> cartEntriesByUserId = cartDTOList
+        Map<String, List<CartDTO>> cartEntriesByUserName = cartDTOList
                 .stream()
-                .collect(Collectors.groupingBy(CartDTO::getUserId));
+                .collect(Collectors.groupingBy(CartDTO::getUserName));
 
-        cartEntriesByUserId
+        cartEntriesByUserName
                 .entrySet()
                 .forEach(entry -> checkUserCartEntryWithInventory(entry.getValue(), entry.getKey()));
     }
 
-    private void checkUserCartEntryWithInventory(List<CartDTO> cartDTOList, String userId) {
+    private void checkUserCartEntryWithInventory(List<CartDTO> cartDTOList, String userName) {
         List<CartDTO> invalidCartEntries = cartDTOList
                 .stream()
                 .filter(this::getInventoryDetails)
                 .collect(Collectors.toList());
 
         if (!CollectionUtils.isEmpty(invalidCartEntries)) {
-            log.debug("found invalid cart entries {} for userId {} ",invalidCartEntries,userId);
-            cartRepository.deleteAll(invalidCartEntries);
-            //send notification to user using userId
+            log.debug("found invalid cart entries {} for userName {} ", invalidCartEntries, userName);
+            //send notification to user using userName
+            notifyCustomer(userName);
         }
+    }
+
+    private void notifyCustomer(String userName) {
+        CustomerDetails customerDetails = customerServiceInvoker.getCustomerDetails(userName);
+        kafkaSender.sendNotification(Util.createNotificationRequest(customerDetails.getEmail()));
     }
 
     /**

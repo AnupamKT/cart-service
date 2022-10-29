@@ -13,14 +13,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name="CART_INFO"
-        ,uniqueConstraints = {@UniqueConstraint(name="uniqueUserIdAndProductName"
-        ,columnNames ={"userId","productName"})})
+        ,uniqueConstraints = {@UniqueConstraint(name="uniqueUserNameAndProductName"
+        ,columnNames ={"userName","productName"})})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CartDTO {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID cartId;
-    private String userId;
+    private String userName;
     private String productName;
     private double price;
     private int quantity;

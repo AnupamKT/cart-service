@@ -18,7 +18,7 @@ public class JobScheduler {
     public void scheduleCartService(){
         log.info("start of scheduleCartService");
         service.checkCartEntriesWithInventory();
-        log.info("start of scheduleCartService");
+        log.info("End of scheduleCartService");
     }
 
 }
